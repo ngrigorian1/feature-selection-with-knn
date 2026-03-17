@@ -1,24 +1,12 @@
-# convert data into a list of lists
+import numpy as np
+import time
+
+# load dataset into numpy arrays for efficiency, avoids python loops overhead
 def load_dataset(file_path):
-    rows = []
+    data = np.loadtxt(file_path)
 
-    with open(file_path, "r") as file:
-        for line in file:
-            line = line.strip()
-
-            if line == "":
-                continue
-
-            values = line.split()
-            row = [float(value) for value in values]
-            rows.append(row)
-
-    classes = []
-    features = []
-
-    for row in rows:
-        classes.append(int(row[0]))
-        features.append(row[1:])
+    classes = data[:, 0].astype(int)
+    features = data[:, 1:].astype(float)
 
     return classes, features
 
@@ -34,21 +22,17 @@ def squared_distance(row1, row2, selected_features):
 
 # predict the class of the test row using the nearest neighbor
 def predict_one_nearest_neighbor(classes, features, index, selected_features):
-    test_row = features[index]
+    test_row = features[index, selected_features]
 
-    smallest_distance = float('inf')
-    nearest_index = -1
+    # compare all rows at once instead of one at a time with python loops
+    candidate_rows = features[:, selected_features]
 
-    for i in range(len(features)):
-        if i == index:
-            continue
+    distances = candidate_rows - test_row
+    squared_distances = np.sum(distances ** 2, axis=1)
 
-        current_distance = squared_distance(test_row, features[i], selected_features)
+    squared_distances[index] = np.inf # to skip self
 
-        if current_distance < smallest_distance:
-            smallest_distance = current_distance
-            nearest_index = i
-    
+    nearest_index = np.argmin(squared_distances)
     return classes[nearest_index]
 
 # hide an instance, predict its class, and check if it was correct
@@ -166,6 +150,8 @@ def main():
 
     print(f"Running nearest neighbor with all {num_features} features, using leaving-one-out evaluation, I get an accuracy of {accuracy:.4f}")
 
+    start_time = time.perf_counter()
+
     if choice == "1":
         forward_selection(classes, features)
     elif choice == "2":
@@ -173,6 +159,9 @@ def main():
     else:
         print("Invalid choice. Please try again.")
         return
+
+    elapsed = time.perf_counter() - start_time
+    print(f"\nSearch completed in {elapsed:.2f}s")
 
 if __name__ == "__main__":
     main()
