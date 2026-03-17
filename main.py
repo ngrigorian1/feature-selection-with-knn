@@ -23,17 +23,17 @@ def load_dataset(file_path):
     return classes, features
 
 # need smallest distance between two feature vectors
-def squared_distance(row1, row2):
+def squared_distance(row1, row2, selected_features):
     total = 0
 
-    for i in range(len(row1)):
+    for i in selected_features:
         diff = row1[i] - row2[i]
         total += diff * diff
     
     return total
 
 # predict the class of the test row using the nearest neighbor
-def predict_one_nearest_neighbor(classes, features, index):
+def predict_one_nearest_neighbor(classes, features, index, selected_features):
     test_row = features[index]
 
     smallest_distance = float('inf')
@@ -43,15 +43,25 @@ def predict_one_nearest_neighbor(classes, features, index):
         if i == index:
             continue
 
-        current_distance = squared_distance(test_row, features[i])
+        current_distance = squared_distance(test_row, features[i], selected_features)
 
         if current_distance < smallest_distance:
             smallest_distance = current_distance
             nearest_index = i
     
-    prediction = classes[nearest_index]
+    return classes[nearest_index]
 
-    return prediction, nearest_index, smallest_distance
+def leave_one_out_cross_validation(classes, features, selected_features):
+    correct = 0
+
+    for i in range(len(features)):
+        prediction = predict_one_nearest_neighbor(classes, features, i, selected_features)
+
+        if prediction == classes[i]:
+            correct += 1
+    
+    accuracy = correct / len(features)
+    return accuracy
 
 
 def main():
@@ -66,15 +76,20 @@ def main():
 
     print(f"\nThis dataset has {num_features} features (not including the class attribute), with {num_instances} instances.")
 
+# testing sanity check 1 (7, 10, 12) and 2 (10, 8, 2)
+    selected_features = [9, 7, 1]
+
     test_index = 0
-    predicted, neighbor_index, distance = predict_one_nearest_neighbor(classes, features, test_index)
+    predicted = predict_one_nearest_neighbor(classes, features, test_index, selected_features)
 
 #printing to make sure the nearest neighbor is working
     print("\nNearest neighbor test:")
     print(f"Actual class: {classes[test_index]}")
-    print(f"Nearest neighbor index: {neighbor_index}")
-    print(f"Nearest neighbor class: {classes[neighbor_index]}")
     print(f"Predicted class: {predicted}")
+
+    accuracy = leave_one_out_cross_validation(classes, features, selected_features)
+    print(f"\nRunning nearest neighbor with all {num_features} features, using leaving-one-out evaluation, I get an accuracy of {accuracy:.4f}")
+
 
 if __name__ == "__main__":
     main()
