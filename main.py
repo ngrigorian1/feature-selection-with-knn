@@ -108,9 +108,42 @@ def forward_selection(classes, features):
             best_accuracy = best_accuracy_at_this_level
             best_set = current_set.copy()
 
-    print(f"Finished search!! The best feature subset is {format_feature_set(best_set)}, "
-        f"which has an accuracy of {best_accuracy:.4f}")
+    print(f"Finished search!! The best feature subset is {format_feature_set(best_set)}, which has an accuracy of {best_accuracy:.4f}")
 
+# find good subset by shrinking down from all
+def backward_elimination(classes, features):
+    num_features = len(features[0])
+    current_set = list(range(num_features))
+    best_accuracy = leave_one_out_cross_validation(classes, features, current_set)
+    best_set = current_set.copy()
+
+    print("\nBeginning search.\n")
+
+    for level in range(num_features):
+        feature_to_remove_at_this_level = None
+        best_accuracy_at_this_level = 0
+
+        for feature in current_set:
+            candidate = current_set.copy()
+            candidate.remove(feature)
+            accuracy = leave_one_out_cross_validation(classes, features, candidate)
+
+            print(f"Using feature(s) {format_feature_set(candidate)} accuracy is {accuracy:.4f}")
+
+            if accuracy > best_accuracy_at_this_level:
+                best_accuracy_at_this_level = accuracy
+                feature_to_remove_at_this_level = feature
+
+        current_set.remove(feature_to_remove_at_this_level)
+
+        print(f"Feature set {format_feature_set(current_set)} was best, accuracy is {best_accuracy_at_this_level:.4f}\n")
+
+        if best_accuracy_at_this_level > best_accuracy:
+            best_accuracy = best_accuracy_at_this_level
+            best_set = current_set.copy()
+
+    print(f"Finished search!! The best feature subset is {format_feature_set(best_set)}, which has an accuracy of {best_accuracy:.4f}")
+        
 def main():
     print("Welcome to Natalie's Feature Selection Algorithm.")
 
@@ -121,17 +154,25 @@ def main():
     num_instances = len(classes)
     num_features = len(features[0])
 
+    print("Choose an algorithm:")
+    print("1) Forward Selection")
+    print("2) Backward Elimination")
+    choice = input().strip()
+
     print(f"\nThis dataset has {num_features} features (not including the class attribute), with {num_instances} instances.")
 
     all_features = list(range(num_features))
     accuracy = leave_one_out_cross_validation(classes, features, all_features)
 
-    print(
-        f"Running nearest neighbor with all {num_features} features, using leaving-one-out evaluation, "
-        f"I get an accuracy of {accuracy:.4f}"
-    )
+    print(f"Running nearest neighbor with all {num_features} features, using leaving-one-out evaluation, I get an accuracy of {accuracy:.4f}")
 
-    forward_selection(classes, features)
+    if choice == "1":
+        forward_selection(classes, features)
+    elif choice == "2":
+        backward_elimination(classes, features)
+    else:
+        print("Invalid choice. Please try again.")
+        return
 
 if __name__ == "__main__":
     main()
