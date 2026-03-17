@@ -103,7 +103,7 @@ def backward_elimination(classes, features):
 
     print("\nBeginning search.\n")
 
-    for level in range(num_features):
+    for level in range(num_features - 1):
         feature_to_remove_at_this_level = None
         best_accuracy_at_this_level = 0
 
